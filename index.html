@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0A1931">
+    <title>D R AI v2.0 Pro</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #040a1a; color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
+            text-align: center; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            width: 100%; max-width: 400px; background: #0b1528;
+            padding: 30px; border-radius: 24px;
+            border: 1px solid #1a2f56;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h2 { letter-spacing: 2px; margin-bottom: 5px; color: #42A5F5; }
+        .subtitle {
+            color: #8aa0c8; font-size: 11px; letter-spacing: 2px;
+            margin-bottom: 30px; text-transform: uppercase;
+        }
+        .orb {
+            width: 150px; height: 150px; margin: 0 auto 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #7cc8ff, #2a7bff, #0a1931);
+            box-shadow: 0 0 50px rgba(42, 123, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        .orb.listening {
+            animation: pulse 1.2s infinite ease-in-out;
+            box-shadow: 0 0 80px #2a7bff;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
+        .status-box {
+            background: #122242; padding: 20px; border-radius: 16px;
+            border: 1px solid #223c70; text-align: left; min-height: 100px;
+            font-size: 16px; line-height: 1.5; margin-bottom: 25px;
+            color: #e0e6ed; overflow-wrap: anywhere;
+        }
+        .btn {
+            width: 100%; padding: 16px; border: 0; border-radius: 14px;
+            font-weight: bold; font-size: 16px;
+            background: linear-gradient(90deg, #1a56d6, #42A5F5);
+            color: #fff; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(26, 86, 214, 0.4);
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .note { color: #8aa0c8; font-size: 12px; line-height: 1.5; margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>D R AI v2.0 Pro</h2>
+    <p class="subtitle">Personal Assistant System</p>
+    <div class="orb" id="orb" aria-hidden="true"></div>
+    <div class="status-box" id="statusLabel" aria-live="polite">
+        D R AI Ready!<br>Mic button dabakar command dein.
+    </div>
+    <button class="btn" id="micButton" type="button" onclick="startVoiceRecognition()">🎙️ Mic Activate Karo</button>
+    <p class="note">Voice commands ke liye browser microphone permission dein. Wake word: “Hey DR”.</p>
+</div>
+
+<script>
+    const contacts = {
+        "papa": "7726849908",
+        "mummy": "9999999999"
+    };
+
+    const supportedApps = {
+        "whatsapp": "https://wa.me",
+        "youtube": "https://youtube.com",
+        "facebook": "https://facebook.com",
+        "gallery": "intent://internal/#Intent;action=android.intent.action.VIEW;type=image/*;end",
+        "camera": "intent://custom/#Intent;action=android.media.action.IMAGE_CAPTURE;end"
+    };
+
+    function speak(text) {
+        if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "hi-IN";
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.log("[TTS Fallback]: " + text);
+        }
+    }
+
+    window.addEventListener("load", () => {
+        setTimeout(() => speak("D R AI ready hai. Mic button dabakar baat karein."), 500);
+    });
+
+    function startVoiceRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            document.getElementById("statusLabel").textContent =
+                "Is browser mein voice recognition support nahi hai. Android par Google Chrome mein kholkar try karein.";
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "hi-IN";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        const statusLabel = document.getElementById("statusLabel");
+        const orb = document.getElementById("orb");
+        statusLabel.textContent = "Suna ja raha hai... Ab boliye.";
+        orb.classList.add("listening");
+
+        recognition.onresult = (event) => {
+            const spokenText = event.results[0][0].transcript;
+            executeVoiceCommand(spokenText);
+        };
+
+        recognition.onerror = (event) => {
+            statusLabel.textContent = "Mic mein dikkat: " + (event.error || "permission ya network check karein");
+            speak("Mic mein dikkat aayi. Permission check karein.");
+            orb.classList.remove("listening");
+        };
+
+        recognition.onend = () => orb.classList.remove("listening");
+
+        try {
+            recognition.start();
+        } catch (error) {
+            statusLabel.textContent = "Mic dobara start nahi ho saka. Thodi der baad try karein.";
+            orb.classList.remove("listening");
+        }
+    }
+
+    function executeVoiceCommand(spokenText) {
+        const statusLabel = document.getElementById("statusLabel");
+        let text = spokenText.toLowerCase().trim();
+        statusLabel.textContent = "Aapne kaha: " + spokenText;
+
+        if (!text.includes("hey dr") && !text.includes("he dr")) {
+            speak("Command se pehle Hey DR boliye.");
+            return;
+        }
+
+        let command = text.replace("hey dr", "").replace("he dr", "").trim();
+
+        if (command.includes("call") || command.includes("phone") || command.includes("कॉल")) {
+            for (const name in contacts) {
+                if (command.includes(name)) {
+                    speak(name + " ko phone call ke liye dialer khol raha hoon.");
+                    setTimeout(() => { window.location.href = "tel:" + contacts[name]; }, 800);
+                    return;
+                }
+            }
+            speak("Contact ka naam database mein nahi mila.");
+            return;
+        }
+
+        if (command.includes("open") || command.includes("kholo") || command.includes("खोलो")) {
+            for (const app in supportedApps) {
+                if (command.includes(app)) {
+                    speak(app + " kholne ki koshish kar raha hoon.");
+                    setTimeout(() => {
+                        if (app === "whatsapp") {
+                            window.location.href = supportedApps[app] + "/" + contacts.papa;
+                        } else {
+                            window.location.href = supportedApps[app];
+                        }
+                    }, 700);
+                    return;
+                }
+            }
+            speak("Yeh application command supported nahi hai.");
+            return;
+        }
+
+        if (command.includes("time") || command.includes("samay") || command.includes("समय")) {
+            const currentTime = new Date().toLocaleTimeString("hi-IN", {
+                hour: "2-digit", minute: "2-digit"
+            });
+            statusLabel.textContent = "Abhi ka samay: " + currentTime;
+            speak("Abhi " + currentTime + " ho rahe hain.");
+            return;
+        }
+
+        speak("Samajh nahi aaya. Kripya dobara bolein.");
+    }
+</script>
+</body>
+</html>
